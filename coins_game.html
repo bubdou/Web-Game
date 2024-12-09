@@ -1,8 +1,8 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>9枚硬币翻转游戏</title>
+<title>9 Coins Flip Game</title>
 <style>
   body {
     font-family: Arial, sans-serif;
@@ -53,19 +53,38 @@
     margin-top: 20px;
     font-weight: bold;
   }
+  #explanation {
+    max-width: 600px;
+    margin: 0 auto 30px auto;
+    text-align: left;
+    font-size: 16px;
+    line-height: 1.5;
+  }
 </style>
 </head>
 <body>
-<h1>9枚硬币翻转游戏</h1>
+<h1>9 Coins Flip Game</h1>
+
+<div id="explanation">
+  <h2>How to Play</h2>
+  <p>You have 9 identical coins, each with a black side and a white side. Initially, there are 4 coins facing black side up and 5 coins facing white side up.</p>
+  <p>In each turn, you must choose exactly 3 coins and flip them (black turns to white, white turns to black).</p>
+  <p>Your goal is to make all 9 coins show the same color (either all black or all white) in as few turns as possible.</p>
+  <p>Try to achieve the goal in the minimal number of turns. Good luck!</p>
+</div>
+
 <div id="info">
-  <p>当前轮数：<span id="round">0</span></p>
-  <p>黑面数：<span id="blackCount">0</span>，白面数：<span id="whiteCount">0</span></p>
+  <p>Current Rounds: <span id="round">0</span></p>
+  <p>Black count: <span id="blackCount">0</span>, White count: <span id="whiteCount">0</span></p>
 </div>
+
 <div id="coin-container"></div>
+
 <div id="actions">
-  <button id="flipBtn">翻转选中硬币</button>
-  <button id="resetBtn">重置游戏</button>
+  <button id="flipBtn">Flip Selected Coins</button>
+  <button id="resetBtn">Reset Game</button>
 </div>
+
 <p id="message"></p>
 
 <script>
@@ -78,12 +97,12 @@ document.addEventListener('DOMContentLoaded', function() {
   const flipBtn = document.getElementById('flipBtn');
   const resetBtn = document.getElementById('resetBtn');
 
-  let coins;   // 存储硬币状态数组：'B'表示黑面朝上，'W'表示白面朝上
-  let round;   // 轮数计数
-  let selectedIndices = []; // 已选中需翻转的硬币索引
+  let coins;   // 'B' for black-up, 'W' for white-up
+  let round;   // track number of rounds
+  let selectedIndices = []; // indices of selected coins for flipping
 
   function initGame() {
-    // 初始状态：4黑5白（前4个是黑，后5个是白）
+    // Initial state: first 4 are black, last 5 are white
     coins = ['B','B','B','B','W','W','W','W','W'];
     round = 0;
     selectedIndices = [];
@@ -92,7 +111,7 @@ document.addEventListener('DOMContentLoaded', function() {
     message.textContent = '';
   }
 
-  // 渲染9枚硬币到界面上
+  // Render the 9 coins on the page
   function renderCoins() {
     coinContainer.innerHTML = '';
     coins.forEach((state, index) => {
@@ -106,7 +125,7 @@ document.addEventListener('DOMContentLoaded', function() {
         c.textContent = 'W';
       }
 
-      // 若该硬币已被选中则显示高亮
+      // Highlight if selected
       if (selectedIndices.includes(index)) {
         c.classList.add('selected');
       }
@@ -116,28 +135,28 @@ document.addEventListener('DOMContentLoaded', function() {
     });
   }
 
-  // 点击硬币选择/取消选择
+  // Select or deselect a coin
   function toggleSelect(index) {
     if (selectedIndices.includes(index)) {
-      // 已选则取消选择
+      // Deselect if already selected
       selectedIndices = selectedIndices.filter(i => i !== index);
     } else {
-      // 未选中则尝试选择
+      // Select if not selected yet
       if (selectedIndices.length < 3) {
         selectedIndices.push(index);
       } else {
-        // 超过3枚不允许
-        message.textContent = '每轮只能选择3个硬币翻转！';
+        // Can't select more than 3 in one round
+        message.textContent = 'You can only choose exactly 3 coins per round!';
         return;
       }
     }
     renderCoins();
   }
 
-  // 翻转选中的3枚硬币
+  // Flip the selected 3 coins
   function flipSelected() {
     if (selectedIndices.length !== 3) {
-      message.textContent = '请先选中3个硬币再翻转！';
+      message.textContent = 'Please select 3 coins before flipping!';
       return;
     }
 
@@ -152,7 +171,7 @@ document.addEventListener('DOMContentLoaded', function() {
     checkWin();
   }
 
-  // 更新顶部信息显示
+  // Update the displayed round, black and white counts
   function updateInfo() {
     const blackCount = coins.filter(c => c === 'B').length;
     const whiteCount = 9 - blackCount;
@@ -162,13 +181,13 @@ document.addEventListener('DOMContentLoaded', function() {
     whiteCountDisplay.textContent = whiteCount;
   }
 
-  // 检查是否全黑或全白
+  // Check if all are black or all are white
   function checkWin() {
     const blackCount = coins.filter(c => c === 'B').length;
     if (blackCount === 9) {
-      message.textContent = `恭喜！你在第${round}轮让所有硬币变为黑面！`;
+      message.textContent = `Congratulations! All coins are black after ${round} rounds!`;
     } else if (blackCount === 0) {
-      message.textContent = `恭喜！你在第${round}轮让所有硬币变为白面！`;
+      message.textContent = `Congratulations! All coins are white after ${round} rounds!`;
     } else {
       message.textContent = '';
     }
