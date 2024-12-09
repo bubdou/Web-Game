@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>9枚硬币翻转游戏</title>
+<style>
+  body {
+    font-family: Arial, sans-serif;
+    text-align: center;
+    margin: 20px;
+  }
+  #coin-container {
+    display: flex;
+    flex-wrap: wrap;
+    width: 680px;
+    margin: 20px auto;
+  }
+  .coin {
+    width: 60px;
+    height: 60px;
+    line-height: 60px;
+    margin: 5px;
+    border: 2px solid #333;
+    border-radius: 50%;
+    cursor: pointer;
+    user-select: none;
+    font-weight: bold;
+    font-size: 20px;
+  }
+  .black {
+    background: black;
+    color: white;
+  }
+  .white {
+    background: white;
+    color: black;
+  }
+  .selected {
+    box-shadow: 0 0 5px 2px #f00;
+  }
+  #info {
+    margin: 10px;
+  }
+  #actions {
+    margin: 10px;
+  }
+  button {
+    padding: 8px 16px;
+    margin: 0 5px;
+    cursor: pointer;
+  }
+  #message {
+    margin-top: 20px;
+    font-weight: bold;
+  }
+</style>
+</head>
+<body>
+<h1>9枚硬币翻转游戏</h1>
+<div id="info">
+  <p>当前轮数：<span id="round">0</span></p>
+  <p>黑面数：<span id="blackCount">0</span>，白面数：<span id="whiteCount">0</span></p>
+</div>
+<div id="coin-container"></div>
+<div id="actions">
+  <button id="flipBtn">翻转选中硬币</button>
+  <button id="resetBtn">重置游戏</button>
+</div>
+<p id="message"></p>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  const coinContainer = document.getElementById('coin-container');
+  const roundDisplay = document.getElementById('round');
+  const blackCountDisplay = document.getElementById('blackCount');
+  const whiteCountDisplay = document.getElementById('whiteCount');
+  const message = document.getElementById('message');
+  const flipBtn = document.getElementById('flipBtn');
+  const resetBtn = document.getElementById('resetBtn');
+
+  let coins;   // 存储硬币状态数组：'B'表示黑面朝上，'W'表示白面朝上
+  let round;   // 轮数计数
+  let selectedIndices = []; // 已选中需翻转的硬币索引
+
+  function initGame() {
+    // 初始状态：4黑5白（前4个是黑，后5个是白）
+    coins = ['B','B','B','B','W','W','W','W','W'];
+    round = 0;
+    selectedIndices = [];
+    renderCoins();
+    updateInfo();
+    message.textContent = '';
+  }
+
+  // 渲染9枚硬币到界面上
+  function renderCoins() {
+    coinContainer.innerHTML = '';
+    coins.forEach((state, index) => {
+      const c = document.createElement('div');
+      c.classList.add('coin');
+      if (state === 'B') {
+        c.classList.add('black');
+        c.textContent = 'B';
+      } else {
+        c.classList.add('white');
+        c.textContent = 'W';
+      }
+
+      // 若该硬币已被选中则显示高亮
+      if (selectedIndices.includes(index)) {
+        c.classList.add('selected');
+      }
+
+      c.addEventListener('click', () => toggleSelect(index));
+      coinContainer.appendChild(c);
+    });
+  }
+
+  // 点击硬币选择/取消选择
+  function toggleSelect(index) {
+    if (selectedIndices.includes(index)) {
+      // 已选则取消选择
+      selectedIndices = selectedIndices.filter(i => i !== index);
+    } else {
+      // 未选中则尝试选择
+      if (selectedIndices.length < 3) {
+        selectedIndices.push(index);
+      } else {
+        // 超过3枚不允许
+        message.textContent = '每轮只能选择3个硬币翻转！';
+        return;
+      }
+    }
+    renderCoins();
+  }
+
+  // 翻转选中的3枚硬币
+  function flipSelected() {
+    if (selectedIndices.length !== 3) {
+      message.textContent = '请先选中3个硬币再翻转！';
+      return;
+    }
+
+    selectedIndices.forEach(idx => {
+      coins[idx] = (coins[idx] === 'B') ? 'W' : 'B';
+    });
+
+    round++;
+    selectedIndices = [];
+    renderCoins();
+    updateInfo();
+    checkWin();
+  }
+
+  // 更新顶部信息显示
+  function updateInfo() {
+    const blackCount = coins.filter(c => c === 'B').length;
+    const whiteCount = 9 - blackCount;
+
+    roundDisplay.textContent = round;
+    blackCountDisplay.textContent = blackCount;
+    whiteCountDisplay.textContent = whiteCount;
+  }
+
+  // 检查是否全黑或全白
+  function checkWin() {
+    const blackCount = coins.filter(c => c === 'B').length;
+    if (blackCount === 9) {
+      message.textContent = `恭喜！你在第${round}轮让所有硬币变为黑面！`;
+    } else if (blackCount === 0) {
+      message.textContent = `恭喜！你在第${round}轮让所有硬币变为白面！`;
+    } else {
+      message.textContent = '';
+    }
+  }
+
+  flipBtn.addEventListener('click', flipSelected);
+  resetBtn.addEventListener('click', initGame);
+
+  initGame();
+});
+</script>
+</body>
+</html>
