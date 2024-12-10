@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <title>9 Coins Flip Game</title>
 <style>
-  /* Previous styles remain the same */
+  /* Same styles as before */
   body {
     font-family: Arial, sans-serif;
     text-align: center;
@@ -152,6 +152,7 @@ document.addEventListener('DOMContentLoaded', function() {
   let round;   // track number of rounds
   let selectedIndices = []; // indices of selected coins for flipping
   let gameWon = false; // track if game is won
+  let lastStartState = []; // store the initial state for resets
 
   function createRandomState() {
     const coins = [];
@@ -205,6 +206,7 @@ document.addEventListener('DOMContentLoaded', function() {
     gameWon = false;
     // Fixed initial state for first load (4B, 5W)
     coins = ['B','B','B','B','W','W','W','W','W'];
+    lastStartState = [...coins]; // Store initial state
     round = 0;
     selectedIndices = [];
     coinContainer.classList.remove('game-over');
@@ -217,9 +219,17 @@ document.addEventListener('DOMContentLoaded', function() {
   }
 
   function resetGame() {
-    gameWon = false;
-    // Completely random state for reset
-    coins = createRandomState();
+    if (gameWon) {
+      // If game was won, create new random state
+      gameWon = false;
+      coins = createRandomState();
+      lastStartState = [...coins]; // Store new initial state
+    } else {
+      // If game wasn't won, reset to last start state
+      gameWon = false;
+      coins = [...lastStartState];
+    }
+    
     round = 0;
     selectedIndices = [];
     coinContainer.classList.remove('game-over');
