@@ -4,6 +4,7 @@
 <meta charset="UTF-8">
 <title>9 Coins Flip Game</title>
 <style>
+  /* Previous styles remain the same */
   body {
     font-family: Arial, sans-serif;
     text-align: center;
@@ -26,6 +27,7 @@
     user-select: none;
     font-weight: bold;
     font-size: 20px;
+    transition: transform 0.3s ease;
   }
   .black {
     background: black;
@@ -38,6 +40,18 @@
   .selected {
     box-shadow: 0 0 5px 2px #f00;
   }
+  .winner {
+    animation: winPulse 1s ease-in-out infinite;
+  }
+  @keyframes winPulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.1); }
+    100% { transform: scale(1); }
+  }
+  .game-over .coin {
+    opacity: 0.8;
+    cursor: not-allowed;
+  }
   #info {
     margin: 10px;
   }
@@ -49,9 +63,24 @@
     margin: 0 5px;
     cursor: pointer;
   }
+  button:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
   #message {
     margin-top: 20px;
     font-weight: bold;
+    font-size: 24px;
+    color: #2c8a2c;
+  }
+  .rounds-highlight {
+    font-size: 32px;
+    color: #ff6b6b;
+    background: #ffe5e5;
+    padding: 0 10px;
+    border-radius: 6px;
+    display: inline-block;
+    margin: 0 5px;
   }
   #explanation {
     max-width: 600px;
@@ -59,6 +88,20 @@
     text-align: left;
     font-size: 16px;
     line-height: 1.5;
+    background: #f8f9fa;
+    padding: 20px;
+    border-radius: 8px;
+  }
+  .instruction-section {
+    margin-bottom: 15px;
+  }
+  .instruction-section h3 {
+    color: #2c5282;
+    margin: 0 0 8px 0;
+  }
+  .confetti {
+    position: fixed;
+    pointer-events: none;
   }
 </style>
 </head>
@@ -67,10 +110,18 @@
 
 <div id="explanation">
   <h2>How to Play</h2>
-  <p>You have 9 identical coins, each with a black side and a white side. Initially, there are 4 coins facing black side up and 5 coins facing white side up.</p>
-  <p>In each turn, you must choose exactly 3 coins and flip them (black turns to white, white turns to black).</p>
-  <p>Your goal is to make all 9 coins show the same color (either all black or all white) in as few turns as possible.</p>
-  <p>Try to achieve the goal in the minimal number of turns. Good luck!</p>
+  <div class="instruction-section">
+    <h3>Goal</h3>
+    <p>Make all coins show the same color (either all black or all white).</p>
+  </div>
+  <div class="instruction-section">
+    <h3>Rules</h3>
+    <ul>
+      <li>Click to select exactly 3 coins</li>
+      <li>Click "Flip Selected Coins" to flip them to their opposite color</li>
+      <li>Try to reach the goal in as few moves as possible</li>
+    </ul>
+  </div>
 </div>
 
 <div id="info">
@@ -100,18 +151,86 @@ document.addEventListener('DOMContentLoaded', function() {
   let coins;   // 'B' for black-up, 'W' for white-up
   let round;   // track number of rounds
   let selectedIndices = []; // indices of selected coins for flipping
+  let gameWon = false; // track if game is won
+
+  function createRandomState() {
+    const coins = [];
+    for(let i = 0; i < 9; i++) {
+      coins.push(Math.random() < 0.5 ? 'B' : 'W');
+    }
+    // Check not already in winning state
+    const blackCount = coins.filter(c => c === 'B').length;
+    if(blackCount === 0 || blackCount === 9) {
+      return createRandomState(); // Try again if all same color
+    }
+    return coins;
+  }
+
+  function createConfetti() {
+    const colors = ['#ff0000', '#00ff00', '#0000ff', '#ffff00', '#ff00ff', '#00ffff'];
+    for (let i = 0; i < 100; i++) {
+      const confetti = document.createElement('div');
+      confetti.className = 'confetti';
+      const color = colors[Math.floor(Math.random() * colors.length)];
+      const size = Math.random() * 10 + 5;
+      confetti.style.width = `${size}px`;
+      confetti.style.height = `${size}px`;
+      confetti.style.background = color;
+      confetti.style.left = `${Math.random() * 100}vw`;
+      confetti.style.top = '-20px';
+      document.body.appendChild(confetti);
+
+      const angle = Math.random() * 360;
+      const velocity = Math.random() * 3 + 2;
+      let posX = parseInt(confetti.style.left);
+      let posY = -20;
+      
+      function updatePosition() {
+        posY += velocity;
+        posX += Math.sin(angle) * 2;
+        confetti.style.transform = `translate(${posX}px, ${posY}px) rotate(${angle * 2}deg)`;
+        
+        if (posY < window.innerHeight) {
+          requestAnimationFrame(updatePosition);
+        } else {
+          confetti.remove();
+        }
+      }
+      
+      requestAnimationFrame(updatePosition);
+    }
+  }
 
   function initGame() {
-    // Initial state: first 4 are black, last 5 are white
+    gameWon = false;
+    // Fixed initial state for first load (4B, 5W)
     coins = ['B','B','B','B','W','W','W','W','W'];
     round = 0;
     selectedIndices = [];
+    coinContainer.classList.remove('game-over');
+    flipBtn.disabled = false;
     renderCoins();
     updateInfo();
     message.textContent = '';
+    // Remove any remaining confetti
+    document.querySelectorAll('.confetti').forEach(c => c.remove());
   }
 
-  // Render the 9 coins on the page
+  function resetGame() {
+    gameWon = false;
+    // Completely random state for reset
+    coins = createRandomState();
+    round = 0;
+    selectedIndices = [];
+    coinContainer.classList.remove('game-over');
+    flipBtn.disabled = false;
+    renderCoins();
+    updateInfo();
+    message.textContent = '';
+    // Remove any remaining confetti
+    document.querySelectorAll('.confetti').forEach(c => c.remove());
+  }
+
   function renderCoins() {
     coinContainer.innerHTML = '';
     coins.forEach((state, index) => {
@@ -125,27 +244,30 @@ document.addEventListener('DOMContentLoaded', function() {
         c.textContent = 'W';
       }
 
-      // Highlight if selected
       if (selectedIndices.includes(index)) {
         c.classList.add('selected');
       }
 
-      c.addEventListener('click', () => toggleSelect(index));
+      if (gameWon) {
+        c.classList.add('winner');
+      }
+
+      if (!gameWon) {
+        c.addEventListener('click', () => toggleSelect(index));
+      }
       coinContainer.appendChild(c);
     });
   }
 
-  // Select or deselect a coin
   function toggleSelect(index) {
+    if (gameWon) return;
+    
     if (selectedIndices.includes(index)) {
-      // Deselect if already selected
       selectedIndices = selectedIndices.filter(i => i !== index);
     } else {
-      // Select if not selected yet
       if (selectedIndices.length < 3) {
         selectedIndices.push(index);
       } else {
-        // Can't select more than 3 in one round
         message.textContent = 'You can only choose exactly 3 coins per round!';
         return;
       }
@@ -153,8 +275,9 @@ document.addEventListener('DOMContentLoaded', function() {
     renderCoins();
   }
 
-  // Flip the selected 3 coins
   function flipSelected() {
+    if (gameWon) return;
+    
     if (selectedIndices.length !== 3) {
       message.textContent = 'Please select 3 coins before flipping!';
       return;
@@ -171,7 +294,6 @@ document.addEventListener('DOMContentLoaded', function() {
     checkWin();
   }
 
-  // Update the displayed round, black and white counts
   function updateInfo() {
     const blackCount = coins.filter(c => c === 'B').length;
     const whiteCount = 9 - blackCount;
@@ -181,20 +303,23 @@ document.addEventListener('DOMContentLoaded', function() {
     whiteCountDisplay.textContent = whiteCount;
   }
 
-  // Check if all are black or all are white
   function checkWin() {
     const blackCount = coins.filter(c => c === 'B').length;
-    if (blackCount === 9) {
-      message.textContent = `Congratulations! All coins are black after ${round} rounds!`;
-    } else if (blackCount === 0) {
-      message.textContent = `Congratulations! All coins are white after ${round} rounds!`;
+    if (blackCount === 9 || blackCount === 0) {
+      gameWon = true;
+      const color = blackCount === 9 ? 'black' : 'white';
+      message.innerHTML = `🎉 Congratulations! All coins are ${color} in <span class="rounds-highlight">${round}</span> rounds! 🎉`;
+      coinContainer.classList.add('game-over');
+      flipBtn.disabled = true;
+      renderCoins(); // Re-render to add winner animation
+      createConfetti();
     } else {
       message.textContent = '';
     }
   }
 
   flipBtn.addEventListener('click', flipSelected);
-  resetBtn.addEventListener('click', initGame);
+  resetBtn.addEventListener('click', resetGame);
 
   initGame();
 });
