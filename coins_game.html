@@ -4,7 +4,6 @@
 <meta charset="UTF-8">
 <title>9 Coins Flip Game</title>
 <style>
-  /* Same styles as before */
   body {
     font-family: Arial, sans-serif;
     text-align: center;
@@ -138,6 +137,10 @@
 
 <p id="message"></p>
 
+<!-- Audio elements for sound effects -->
+<audio id="congratSound" src="congratulation.mp3"></audio>
+<audio id="flipSound" src="flip.mp3"></audio>
+
 <script>
 document.addEventListener('DOMContentLoaded', function() {
   const coinContainer = document.getElementById('coin-container');
@@ -147,6 +150,10 @@ document.addEventListener('DOMContentLoaded', function() {
   const message = document.getElementById('message');
   const flipBtn = document.getElementById('flipBtn');
   const resetBtn = document.getElementById('resetBtn');
+
+  // Audio elements
+  const congratSound = document.getElementById('congratSound');
+  const flipSound = document.getElementById('flipSound');
 
   let coins;   // 'B' for black-up, 'W' for white-up
   let round;   // track number of rounds
@@ -159,11 +166,17 @@ document.addEventListener('DOMContentLoaded', function() {
     for(let i = 0; i < 9; i++) {
       coins.push(Math.random() < 0.5 ? 'B' : 'W');
     }
-    // Check not already in winning state
+    
+    // Count black coins
     const blackCount = coins.filter(c => c === 'B').length;
-    if(blackCount === 0 || blackCount === 9) {
-      return createRandomState(); // Try again if all same color
+    
+    // Check if state is invalid:
+    // 1. All same color (blackCount = 0 or 9)
+    // 2. Exactly 3 of either color (blackCount = 3 or 6) which would allow 1-round win
+    if(blackCount === 0 || blackCount === 9 || blackCount === 3 || blackCount === 6) {
+      return createRandomState(); // Try again if invalid state
     }
+    
     return coins;
   }
 
@@ -185,19 +198,19 @@ document.addEventListener('DOMContentLoaded', function() {
       const velocity = Math.random() * 3 + 2;
       let posX = parseInt(confetti.style.left);
       let posY = -20;
-      
+
       function updatePosition() {
         posY += velocity;
         posX += Math.sin(angle) * 2;
         confetti.style.transform = `translate(${posX}px, ${posY}px) rotate(${angle * 2}deg)`;
-        
+
         if (posY < window.innerHeight) {
           requestAnimationFrame(updatePosition);
         } else {
           confetti.remove();
         }
       }
-      
+
       requestAnimationFrame(updatePosition);
     }
   }
@@ -229,7 +242,7 @@ document.addEventListener('DOMContentLoaded', function() {
       gameWon = false;
       coins = [...lastStartState];
     }
-    
+
     round = 0;
     selectedIndices = [];
     coinContainer.classList.remove('game-over');
@@ -271,7 +284,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
   function toggleSelect(index) {
     if (gameWon) return;
-    
+
     if (selectedIndices.includes(index)) {
       selectedIndices = selectedIndices.filter(i => i !== index);
     } else {
@@ -287,11 +300,14 @@ document.addEventListener('DOMContentLoaded', function() {
 
   function flipSelected() {
     if (gameWon) return;
-    
+
     if (selectedIndices.length !== 3) {
       message.textContent = 'Please select 3 coins before flipping!';
       return;
     }
+
+    // Play flip sound
+    flipSound.play();
 
     selectedIndices.forEach(idx => {
       coins[idx] = (coins[idx] === 'B') ? 'W' : 'B';
@@ -319,6 +335,10 @@ document.addEventListener('DOMContentLoaded', function() {
       gameWon = true;
       const color = blackCount === 9 ? 'black' : 'white';
       message.innerHTML = `🎉 Congratulations! All coins are ${color} in <span class="rounds-highlight">${round}</span> rounds! 🎉`;
+
+      // Play congratulation sound
+      congratSound.play();
+
       coinContainer.classList.add('game-over');
       flipBtn.disabled = true;
       renderCoins(); // Re-render to add winner animation
